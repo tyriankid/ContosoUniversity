@@ -21,11 +21,23 @@ namespace ContosoUniversity.Controllers
 
         // GET: Students
         //控制器:提供视图的list页面
-        public async Task<IActionResult> Index(string sortOrder, string searchString)
+        public async Task<IActionResult> Index(string sortOrder, string currentFilter, string searchString,int? page)
         {
+            ViewData["CurrentSort"] = sortOrder;
             ViewData["NameSortParm"] = string.IsNullOrEmpty(sortOrder) ? "name_desc" : "";
             ViewData["DateSortParm"] = sortOrder == "Date" ? "date_desc" : "Date";
+            
+            if(searchString != null)
+            {
+                page = 1;
+            }
+            else
+            {
+                searchString = currentFilter;
+            }
+
             ViewData["CurrentFilter"] = searchString;//手动高亮
+
             var students = from s in _context.Students
                            select s;
             if (!string.IsNullOrEmpty(searchString))
@@ -47,7 +59,9 @@ namespace ContosoUniversity.Controllers
                     students = students.OrderBy(s => s.LastName);
                     break;
             }
-            return View(await students.AsNoTracking().ToListAsync());
+
+            int pageSize = 3;
+            return View(await PaginatedList<Student>.CreateAsync( students.AsNoTracking(),page ?? 1,pageSize));
         }
 
         // GET: Students/Details/5
